@@ -27,8 +27,9 @@ type=
 package=
 country=
 
-echo "[+] Starting script..." >> ${log}
-echo "[+] Log path: ${log}" 
+# Set log
+logpath=$(pwd)
+log="${logpath}/${0##*/}.log"
 
 # Assigning passed in parameters.
 while :; do
@@ -68,27 +69,35 @@ while :; do
   country=$4
 done
 
-echo "[+] Command received: ${0##*/} ${1} ${2} ${3} ${4}" >> ${log}
+echo "[+] Starting script..." | tee -a ${log}
+echo "[+] Log path: ${log}" | tee -a ${log} 
+echo "[+] Command received: ${0##*/} ${command} ${type} ${package} ${country}" | tee -a ${log}
 
 # Start chain of job
 case $command in
   deploy)
     case $type in
       build)
+        echo "[+] Command received: Run deploy_build ${package}" | tee -a ${log}
         ;;
       nonbuild)
+        echo "[+] Command received: Run deploy_nonbuild ${package}" | tee -a ${log}
         ;;
       sql)
+        echo "[+] Command received: Run deploy_sql ${package}" | tee -a ${log}
         ;;
     esac
   ;;
   rollback)
     case $type in
       build)
+        echo "[+] Command received: Run rollback_build ${package}" | tee -a ${log}
         ;;
       nonbuild)
+        echo "[+] Command received: Run rollback_nonbuild ${package}" | tee -a ${log}
         ;;
       sql)
+        echo "[+] Command received: Run rollback_sql ${package}" | tee -a ${log}
         ;;
     esac
 esac
