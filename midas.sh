@@ -71,7 +71,7 @@ done
 
 # Check if all variables are assigned
 if [ -z ${command} ] || [ -z ${type} ] || [ -z ${package} ]; then
-  show_help
+  echo '[-] Error: Missing required parameter(s).' >&2
   exit 1
 fi
 
