@@ -1,0 +1,4 @@
+dod_path="~/project/zero-touch"
+dod_url="https://www.gnu.org/software/wget/dodnum/wget.html"
+dod_marker="dodnum"
+dod_chmod="775"
