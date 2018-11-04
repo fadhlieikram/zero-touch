@@ -1,9 +1,10 @@
 #!/bin/bash
 
+source setting.txt
+
 dodnum=$1
 dodpath=$2
-marker="dodnum"
-dod_url="www.getdod.com/&param=dodnum"
+marker=${dod_marker}
 
 
 if [ -z ${dod_url} ] || [ -z ${dodnum} ] || [ -z ${dodpath} ]; then
@@ -19,13 +20,24 @@ if [ $? -ne 0 ]; then
   exit 1
 fi
 
+# Check if link can be reach
+echo "[+] wget --spider ${url}"
+wget --spider ${url}
+
+exit=$?
+if [ $exit -ne 0 ]; then
+  echo "[-] Error: ${exit}. Url ${url} cant be reached." >&2
+  exit 1
+fi
+
 # Perform download
 echo "[+] Downloading..."
-echo "[+] wget -v ${url} -O ${dodpath}/${dodnum}.zip"
-#wget -v ${url} -O ${dodpath}/${dodnum}.zip
+echo "[+] wget -v ${url} -O ${dodpath}/${dodnum}.html"
+wget -v ${url} -O ${dodpath}/${dodnum}.htm
 
-if [ $? -ne 0 ]; then
-  echo "[-] Error: Failed to download from ${url}" >&2
+exit=$?
+if [ $exit -ne 0 ]; then
+  echo "[-] Error: ${exit}. Failed to download from ${url}" >&2
   exit 1
 fi
 
