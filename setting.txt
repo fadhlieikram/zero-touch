@@ -1,0 +1,10 @@
+# Dod package setting
+dod_path="/home/fadhlie/project/zero-touch"
+dod_url="https://www.gnu.org/software/wget/dodnum/wget.html"
+dod_marker="dodnum"
+dod_chmod="775"
+
+# Jar package setting
+jar_path_source="*.jar"
+jar_path_target="/home/fadhlie/project/zero-touch/batchdir"
+jar_chmod="755"

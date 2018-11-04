@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 # Usage info
 show_help() {
@@ -60,7 +60,7 @@ while :; do
       ;;
     --help|-\?)
       show_help
-      exit
+      exit 0
       ;;
     *)
       break
