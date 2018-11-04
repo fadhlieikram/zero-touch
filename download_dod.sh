@@ -24,9 +24,9 @@ fi
 echo "[+] wget --spider ${url}"
 wget --spider ${url}
 
-exit=$?
-if [ $exit -ne 0 ]; then
-  echo "[-] Error: ${exit}. Url ${url} cant be reached." >&2
+return=$?
+if [ $return -ne 0 ]; then
+  echo "[-] Error: ${return}. Url ${url} cant be reached." >&2
   exit 1
 fi
 
@@ -35,9 +35,9 @@ echo "[+] Downloading..."
 echo "[+] wget -v ${url} -O ${dodpath}/${dodnum}.html"
 wget -v ${url} -O ${dodpath}/${dodnum}.htm
 
-exit=$?
-if [ $exit -ne 0 ]; then
-  echo "[-] Error: ${exit}. Failed to download from ${url}" >&2
+return=$?
+if [ $return -ne 0 ]; then
+  echo "[-] Error: ${return}. Failed to download from ${url}" >&2
   exit 1
 fi
 
