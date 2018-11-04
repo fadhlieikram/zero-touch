@@ -42,3 +42,4 @@ if [ $exit -ne 0 ]; then
 fi
 
 echo "[+] Download complete."
+exit 0
