@@ -4,7 +4,7 @@ source=$1
 target=$2
 
 # Check if all variables are assigned
-if [ -z ${source} ] || [ -z ${target} ]; then
+if [ -z "$source" ] || [ -z "$target" ]; then
   echo '[-] Error: Required parameter(s) are not set.' >&2
   exit 1
 fi

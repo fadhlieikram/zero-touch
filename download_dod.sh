@@ -1,6 +1,6 @@
 #!/bin/bash
 
-source setting.txt
+./props_parser.sh
 
 dodnum=$1
 dodpath=$2

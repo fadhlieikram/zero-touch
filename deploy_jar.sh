@@ -1,6 +1,6 @@
 #!/bin/bash
 
-source setting.txt
+./props_parser.sh
 
 # Initialize global variable
 dodnumber=
