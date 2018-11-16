@@ -56,7 +56,7 @@ while :; do
       else
         echo '[-] Error: "-p" requires a non-empty option argument.' >&2
         exit 1
-      fi
+      fi${0##*/}
       ;;
     --help|-\?)
       show_help
@@ -106,4 +106,13 @@ case $command in
         echo "[+] Run rollback_sql ${package}" | tee -a ${log}
         ;;
     esac
+  ;;
 esac
+
+if [ $? -ne 0 ];
+  echo "[-] Error: ${0##*/} failed!" | tee -a ${log}
+  exit 1
+fi
+
+echo "[+] ${0##*/} has completed successfully!" | tee -a ${log}
+exit 0
