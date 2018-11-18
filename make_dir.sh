@@ -3,12 +3,9 @@
 source props.properties
 
 # Initialize variables
-dod="$PACKAGE"
-dir_entry_file="$DIR_ENTRY_PATH"
+# var ENTRY_FILE is coming from deploy_appfiles.sh
+tmp_file="$ENTRY_FILE"
 dir_entry_chmod="$DIR_ENTRY_CHMOD"
-dir=
-tmp_file=
-
 
 dir=$1
 
@@ -18,17 +15,14 @@ if [ -z "$dir" ]; then
   exit 1
 fi
 
-if [ -z "$dir_entry_file" ] || [ -z "$dir_entry_chmod" ] || [ -z "$dod" ]; then
+if [ -z "$tmp_file" ] || [ -z "$dir_entry_chmod" ]; then
   echo '[-] Error: Directory creation entry details are not set.' >&2
   exit 1
 fi
 
-
-tmp_file=${dir_entry_file}_${dod}
-
 # Create temporary entry file
 if [ ! -f "$tmp_file" ]; then
-  echo "[+] Creating directory creation entry file: ${tmp_file}."
+  echo "[+] Creating app directory creation entry file: ${tmp_file}."
   
   touch ${tmp_file}
   
@@ -40,7 +34,6 @@ if [ ! -f "$tmp_file" ]; then
   chmod ${dir_entry_chmod} ${tmp_file}
 fi
 
-echo "[+] Creating directory: ${dir}."
 mkdir ${dir}
 
 if [ $? -ne 0 ]; then

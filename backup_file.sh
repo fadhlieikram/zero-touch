@@ -9,8 +9,6 @@ if [ -z ${source} ] || [ -z ${target} ]; then
   exit 1
 fi
 
-echo "[+] Copying ${source} to ${target}"
-echo "[+] cp -p ${source} ${target}"
 cp -p ${source} ${target}
 
 if [ $? -ne 0 ]; then

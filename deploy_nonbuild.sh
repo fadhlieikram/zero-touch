@@ -25,9 +25,9 @@ create_app_dir(){
   done
 }
 
-set_build_var_array() {
+set_nonbuild_var_array() {
   # Get all variables with name starts with NONBUILD_PATH
-  local PARAMLIST=`echo ${!BUILD_PATH*}`
+  local PARAMLIST=`echo ${!NONBUILD_PATH*}`
   
   # Iterate the list and get only variable ends with _SOURCE
   index=0
@@ -125,7 +125,7 @@ if [ $? -ne 0 ]; then
 fi
 
 
-set_build_var_array
+set_nonbuild_var_array
 
 # Iterate every nonbuild source path
 for arr in "${PARAM_ARR[@]}"; do

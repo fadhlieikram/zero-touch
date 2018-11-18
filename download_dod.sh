@@ -4,7 +4,7 @@
 
 dodnum=$1
 dodpath=$2
-marker=${dod_marker}
+marker=${DOD_MARKER}
 
 
 if [ -z ${dod_url} ] || [ -z ${dodnum} ] || [ -z ${dodpath} ]; then
@@ -21,7 +21,7 @@ if [ $? -ne 0 ]; then
 fi
 
 # Check if link can be reach
-echo "[+] wget --spider ${url}"
+echo "[+] Checking url..."
 wget --spider ${url}
 
 return=$?
@@ -30,9 +30,10 @@ if [ $return -ne 0 ]; then
   exit 1
 fi
 
+echo "[+] Url ${url} exist."
+
 # Perform download
-echo "[+] Downloading..."
-echo "[+] wget -v ${url} -O ${dodpath}/${dodnum}.html"
+echo "[+] Downloading package..."
 wget -v ${url} -O ${dodpath}/${dodnum}.htm
 
 return=$?
