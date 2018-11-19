@@ -3,7 +3,7 @@
 source props.properties
 
 # Initialize variables
-# var ENTRY_FILE is coming from deploy_appfiles.sh
+# var ENTRY_FILE is coming from deploy_*.sh
 tmp_file="$ENTRY_FILE"
 dir_entry_chmod="$DIR_ENTRY_CHMOD"
 

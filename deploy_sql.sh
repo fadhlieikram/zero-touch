@@ -6,42 +6,12 @@ source props.properties
 declare -a PARAM_ARR
 dodnumber=
 
-create_app_dir(){
-  # Get all variables with name starts with APP_PATH*
-  local PARAMLIST=`echo ${!APP_PATH*}`
+
+set_sql_var_array() {
+  # Get all variables with name starts with DB_SCRIPT
+  local PARAMLIST=`echo ${!SQL_SCRIPT*}`
   local SORTEDLIST=
-  local tmpfile=lst1.tmp
-
-  for a in ${PARAMLIST}; do
-    echo "${a}" >> ${tmpfile}
-  done
-
-  SORTEDLIST=$(sort -t_ -k3n ${tmpfile})
-  
-  if [ -f ${tmpfile} ]; then
-    rm ${tmpfile}
-  fi
-  
-  # Iterate the list and create dir if doesn't exist
-  for p in ${SORTEDLIST}; do
-    if [[ "${p}" = *_TARGET ]] && [ ! -d "${!p}" ]; then
-      
-      echo "[+] Creating application directory:${!p}"
-        ./make_dir.sh "${!p}"
-        
-        if [ $? -ne 0 ]; then
-          echo "[-] Error: Unable to create dir." >&2
-          return 1
-        fi
-    fi
-  done
-}
-
-set_nonbuild_var_array() {
-  # Get all variables with name starts with NONBUILD_PATH
-  local PARAMLIST=`echo ${!NONBUILD_PATH*}`
-  local SORTEDLIST=
-  local tmpfile=lst2.tmp
+  local tmpfile=lst3.tmp
 
   for a in ${PARAMLIST}; do
     echo "${a}" >> ${tmpfile}
@@ -56,7 +26,7 @@ set_nonbuild_var_array() {
   # Iterate the list and get only variable ends with _SOURCE
   index=0
   for p in ${SORTEDLIST}; do
-    if [ ! -z "$p" ] && [[ "$p" = *_SOURCE ]]; then
+    if [ ! -z "$p" ] && [[ "$p" = SQL_SCRIPT* ]]; then
       PARAM_ARR[index]="$p"
       index=$[index+1]
     fi
@@ -116,7 +86,7 @@ deploy_file() {
 
     chmod ${NONBUILD_CHMOD} "${target_dir}"
   fi
-
+  
   cp -p ${source} ${target}
 
   if [ $? -ne 0 ]; then
@@ -130,7 +100,6 @@ deploy_file() {
   fi
 
   chmod ${NONBUILD_CHMOD} ${target}
-  dos2unix -q "${target}"
   echo "[+] File deployed. File:${target}"
   return 0
 }
@@ -157,23 +126,19 @@ fi
 
 echo "[+] Dod directory found:${dodpath}."
 
-create_app_dir
-
-if [ $? -ne 0 ]; then
-  echo "[-] App dir creation failed." >&2
-  exit 1
-fi
-
-
-set_nonbuild_var_array
+set_sql_var_array
 
 # Iterate every nonbuild source path
 for arr in "${PARAM_ARR[@]}"; do
 
   var_source=${arr}
-  var_target=`echo ${arr} | sed s/SOURCE/TARGET/g`
+  
+  # Skip var thats not *_PATH
+  if [ -z "${var_source}" ] || [[ "${var_source}" = *_PATH ]]; then
+    break
+  fi
 
-  # Find file in source path
+  # Find sql file in path
   dodsourcepath="${dodpath}${!var_source}"
   files=$(find "${dodsourcepath}" -type f -prune)
 
@@ -183,7 +148,10 @@ for arr in "${PARAM_ARR[@]}"; do
   fi
 
   for file in ${files}; do
-    echo "[+] File found:${file}"
+    echo "[+] Script found:${file}"
+    
+    
+    
     sourcefile="${file}"
     filename=$(basename "${file}")
     targetfile="${!var_target}/${filename}"

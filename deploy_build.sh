@@ -9,29 +9,53 @@ dodnumber=
 create_app_dir(){
   # Get all variables with name starts with APP_PATH*
   local PARAMLIST=`echo ${!APP_PATH*}`
+  local SORTEDLIST=
+  local tmpfile=lst1.tmp
+
+  for a in ${PARAMLIST}; do
+    echo "${a}" >> ${tmpfile}
+  done
+
+  SORTEDLIST=$(sort -t_ -k3n ${tmpfile})
+  
+  if [ -f ${tmpfile} ]; then
+    rm ${tmpfile}
+  fi
   
   # Iterate the list and create dir if doesn't exist
-  for p in ${PARAMLIST}; do
-    if [[ "${p}" = *_TARGET ]] && [ ! -d "${p}" ]; then
-
+  for p in ${SORTEDLIST}; do
+    if [[ "${p}" = *_TARGET ]] && [ ! -d "${!p}" ]; then
+      
       echo "[+] Creating application directory:${!p}"
-      ./make_dir.sh "${!p}"
-
-      if [ $? -ne 0 ]; then
-        echo "[-] Error: Unable to create dir." >&2
-        return 1
-      fi
+        ./make_dir.sh "${!p}"
+        
+        if [ $? -ne 0 ]; then
+          echo "[-] Error: Unable to create dir." >&2
+          return 1
+        fi
     fi
   done
 }
 
 set_build_var_array() {
-  # Get all variables with name starts with NONBUILD_PATH
+  # Get all variables with name starts with BUILD_PATH
   local PARAMLIST=`echo ${!BUILD_PATH*}`
+  local SORTEDLIST=
+  local tmpfile=lst2.tmp
+
+  for a in ${PARAMLIST}; do
+    echo "${a}" >> ${tmpfile}
+  done
+
+  SORTEDLIST=$(sort -t_ -k3n ${tmpfile})
+  
+  if [ -f ${tmpfile} ]; then
+    rm ${tmpfile}
+  fi
   
   # Iterate the list and get only variable ends with _SOURCE
   index=0
-  for p in ${PARAMLIST}; do
+  for p in ${SORTEDLIST}; do
     if [ ! -z "$p" ] && [[ "$p" = *_SOURCE ]]; then
       PARAM_ARR[index]="$p"
       index=$[index+1]
@@ -44,6 +68,11 @@ backup_file() {
   local dodnum=${dodnumber}
   local newfile=${filetobackup}_${dodnumber}
 
+  if [ -z ${filetobackup} ] || [ -z ${newfile} ]; then
+    echo '[-] Error: Required parameter(s) not set.' >&2
+    exit 1
+  fi
+
   echo "[+] Performing file backup (${filetobackup}) to (${newfile})"
 
   if [ -f "${newfile}" ]; then
@@ -51,10 +80,15 @@ backup_file() {
     return 1
   fi
 
-  ./backup_file.sh ${filetobackup} ${newfile}
-    
+  cp -p ${filetobackup} ${newfile}
+
   if [ $? -ne 0 ]; then
-    echo "[-] Error: Unable to backup file:${filetobackup}" >&2
+    echo "[-] Error: Unable to backup file (${filetobackup})." >&2
+    return 1
+  fi
+  
+  if [ ! -f  "${newfile}" ]; then
+    echo "[-] Error: Attempt to create backup file (${newfile}) failed." >&2
     return 1
   fi
 
@@ -82,11 +116,16 @@ deploy_file() {
 
     chmod ${NONBUILD_CHMOD} "${target_dir}"
   fi
-    
-  ./copy_file.sh ${source} ${target}
+  
+  cp -p ${source} ${target}
 
   if [ $? -ne 0 ]; then
-    echo "[-] Error: Failed to deploy file:${source}" >&2
+    echo "[-] Error: Unable to copy file:${source}" >&2
+    return 1
+  fi
+  
+  if [ ! -f ${target} ]; then
+    echo "[-] Error: Attempt to copy file (${source}) to (${target}) failed." >&2
     return 1
   fi
 
@@ -135,7 +174,7 @@ for arr in "${PARAM_ARR[@]}"; do
 
   # Find file in source path
   dodsourcepath="${dodpath}${!var_source}"
-  files=$(find "${dodsourcepath}" -type f)
+  files=$(find "${dodsourcepath}" -type f -prune)
 
   if [ -z "${files}" ]; then
     echo "[-] Warning: Source path is empty. Path:${!var_source}"

@@ -9,11 +9,23 @@ dodnumber=
 
 set_nonbuild_var_array() {
   # Get all variables with name starts with NONBUILD_PATH
-  PARAMLIST=`echo ${!NONBUILD_PATH*}`
+  local PARAMLIST=`echo ${!NONBUILD_PATH*}`
+  local SORTEDLIST=
+  local tmpfile=lst2.tmp
+
+  for a in ${PARAMLIST}; do
+    echo "${a}" >> ${tmpfile}
+  done
+
+  SORTEDLIST=$(sort -t_ -k3n ${tmpfile})
+  
+  if [ -f ${tmpfile} ]; then
+    rm ${tmpfile}
+  fi
   
   # Iterate the list and get only variable ends with _SOURCE
   index=0
-  for p in ${PARAMLIST}; do
+  for p in ${SORTEDLIST}; do
     if [ ! -z "$p" ] && [[ "$p" = *_SOURCE ]]; then
       PARAM_ARR[index]="$p"
       index=$[index+1]
@@ -25,38 +37,54 @@ restore_file() {
   local filetorestore=$1
   local dodnum=${dodnumber}
   local backupfile=${filetorestore}_${dodnumber}
+  
+  if [ -z ${filetorestore} ] || [ -z ${backupfile} ]; then
+    echo '[-] Error: Required parameter(s) not set.' >&2
+    exit 1
+  fi
 
   echo "[+] Restoring file (${backupfile}) to (${filetorestore})"
 
   if [ ! -f "${backupfile}" ]; then
     echo "[-] Warning: Backup file doesn't exist."
     echo "[-] Warning: Deleting file:${filetorestore}"
-
+    
     rm ${filetorestore}
-
+    
     if [ $? -ne 0 ]; then
       echo "[-] Error: Unable to delete file." >&2
       return 1
     fi 
   
   else
-    ./copy_file.sh ${backupfile} ${filetorestore}
+    
+    cp -p ${backupfile} ${filetorestore}
     
     if [ $? -ne 0 ]; then
       echo "[-] Error: Unable to restore file." >&2
       return 1
-    fi 
+    fi
+    
+    if [ ! -f ${filetorestore} ]; then
+      echo "[-] Error: Attempt to restore file (${backupfile}) to (${filetorestore}) failed." >&2
+      return 1
+    fi
   fi
 
   return 0
 }
 
 delete_dir() {
+  local reventry=
 
   if [ ! -f "${ENTRY_FILE}" ]; then
-    echo "Directory creation entry file doesn't exist!:${ENTRY_FILE}"
-    return 1
+    echo "[+] Directory creation entry file doesn't exist. No directory to be deleted."
+    return 0
   fi
+  
+  # Reverse order of file content
+  reventry="${ENTRY_FILE}_rev"
+  tac ${ENTRY_FILE} > ${reventry}
   
   while read -r dir; do
     echo "[+] Deleting directory:${dir}"
@@ -68,11 +96,12 @@ delete_dir() {
       return 1
     fi
 
-  done <<< $(tac "${ENTRY_FILE}")
+  done < ${reventry}
 
   echo "[+] Deleting entry file:${ENTRY_FILE}"
 
   rm "${ENTRY_FILE}"
+  rm "${reventry}"
 
   return 0
 }
@@ -87,6 +116,7 @@ fi
 
 dodnumber=$1
 ENTRY_FILE="${DIR_ENTRY_PATH}_${dodnumber}"
+export ENTRY_FILE
 
 # Check if dod path exist
 dodpath=${DOD_PATH}/${dodnumber}
@@ -108,7 +138,7 @@ for arr in "${PARAM_ARR[@]}"; do
 
   # Find file in source path
   dodsourcepath="${dodpath}${!var_source}"
-  files=$(find "${dodsourcepath}" -type f)
+  files=$(find "${dodsourcepath}" -type f -prune)
 
   if [ -z "${files}" ]; then
     echo "[-] Warning: Source path is empty. Path:${!var_source}"

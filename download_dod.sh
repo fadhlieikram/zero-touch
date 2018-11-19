@@ -1,6 +1,6 @@
 #!/bin/bash
 
-./props_parser.sh
+source props.properties
 
 dodnum=$1
 dodpath=$2
@@ -29,8 +29,6 @@ if [ $return -ne 0 ]; then
   echo "[-] Error: ${return}. Url ${url} cant be reached." >&2
   exit 1
 fi
-
-echo "[+] Url ${url} exist."
 
 # Perform download
 echo "[+] Downloading package..."
