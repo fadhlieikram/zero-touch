@@ -1,12 +1,19 @@
+#########################################################################
+###   This program create directory, and an entry file which          ###
+###   records the path of created directory.                          ###
+#########################################################################
+
 #!/bin/bash
 
 source props.properties
 
 # Initialize variables
-# var ENTRY_FILE is coming from deploy_*.sh
-tmp_file="$ENTRY_FILE"
+# var entry_file is coming from deploy_*.sh
+tmp_file="$entry_file"
 dir_entry_chmod="$DIR_ENTRY_CHMOD"
 
+
+# Program starts here
 dir=$1
 
 # Check if all variables are assigned
@@ -22,12 +29,12 @@ fi
 
 # Create temporary entry file
 if [ ! -f "$tmp_file" ]; then
-  echo "[+] Creating app directory creation entry file: ${tmp_file}."
+  echo "[+] Creating entry file for directory creation:${tmp_file}."
   
   touch ${tmp_file}
-  
+
   if [ $? -ne 0 ]; then
-    echo "[-] Error: Unable to create file: ${tmp_file}." >&2
+    echo "[-] Error: Unable to create file:${tmp_file}." >&2
     exit 1
   fi
   
@@ -37,7 +44,7 @@ fi
 mkdir ${dir}
 
 if [ $? -ne 0 ]; then
-  echo "[-] Error: Unable to create directory: ${dir}." >&2
+  echo "[-] Error: Unable to create directory:${dir}." >&2
   exit 1
 fi
 

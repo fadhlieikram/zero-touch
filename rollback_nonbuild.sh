@@ -1,23 +1,27 @@
+#########################################################################
+###   This program restores/delete non-build application file(s)      ###
+###   if deployed and delete any created directory                    ###
+#########################################################################
 #!/bin/bash
 
 source props.properties
 
 # Initialize global variable
-declare -a PARAM_ARR
-ENTRY_FILE=
+declare -a param_arr
+entry_file=
 dodnumber=
 
 set_nonbuild_var_array() {
   # Get all variables with name starts with NONBUILD_PATH
-  local PARAMLIST=`echo ${!NONBUILD_PATH*}`
-  local SORTEDLIST=
+  local paramlist=`echo ${!NONBUILD_PATH*}`
+  local sortedlist=
   local tmpfile=lst2.tmp
 
-  for a in ${PARAMLIST}; do
+  for a in ${paramlist}; do
     echo "${a}" >> ${tmpfile}
   done
 
-  SORTEDLIST=$(sort -t_ -k3n ${tmpfile})
+  sortedlist=$(sort -t_ -k3n ${tmpfile})
   
   if [ -f ${tmpfile} ]; then
     rm ${tmpfile}
@@ -25,9 +29,9 @@ set_nonbuild_var_array() {
   
   # Iterate the list and get only variable ends with _SOURCE
   index=0
-  for p in ${SORTEDLIST}; do
+  for p in ${sortedlist}; do
     if [ ! -z "$p" ] && [[ "$p" = *_SOURCE ]]; then
-      PARAM_ARR[index]="$p"
+      param_arr[index]="$p"
       index=$[index+1]
     fi
   done
@@ -77,14 +81,14 @@ restore_file() {
 delete_dir() {
   local reventry=
 
-  if [ ! -f "${ENTRY_FILE}" ]; then
+  if [ ! -f "${entry_file}" ]; then
     echo "[+] Directory creation entry file doesn't exist. No directory to be deleted."
     return 0
   fi
   
   # Reverse order of file content
-  reventry="${ENTRY_FILE}_rev"
-  tac ${ENTRY_FILE} > ${reventry}
+  reventry="${entry_file}_rev"
+  tac ${entry_file} > ${reventry}
   
   while read -r dir; do
     echo "[+] Deleting directory:${dir}"
@@ -98,9 +102,9 @@ delete_dir() {
 
   done < ${reventry}
 
-  echo "[+] Deleting entry file:${ENTRY_FILE}"
+  echo "[+] Deleting entry file:${entry_file}"
 
-  rm "${ENTRY_FILE}"
+  rm "${entry_file}"
   rm "${reventry}"
 
   return 0
@@ -115,8 +119,8 @@ if [ -z $1 ]; then
 fi
 
 dodnumber=$1
-ENTRY_FILE="${DIR_ENTRY_PATH}_${dodnumber}"
-export ENTRY_FILE
+entry_file="${DIR_ENTRY_PATH}_${dodnumber}"
+export entry_file
 
 # Check if dod path exist
 dodpath=${DOD_PATH}/${dodnumber}
@@ -131,7 +135,7 @@ echo "[+] Dod directory found:${dodpath}."
 set_nonbuild_var_array
 
 # Iterate every nonbuild source path
-for arr in "${PARAM_ARR[@]}"; do
+for arr in "${param_arr[@]}"; do
 
   var_source=${arr}
   var_target=`echo ${arr} | sed s/SOURCE/TARGET/g`

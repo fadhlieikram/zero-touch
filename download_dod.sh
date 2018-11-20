@@ -1,3 +1,7 @@
+#########################################################################
+###   This program download dod package, to a specified directory.    ###
+###                                                                   ###
+#########################################################################
 #!/bin/bash
 
 source props.properties
@@ -6,7 +10,7 @@ dodnum=$1
 dodpath=$2
 marker=${DOD_MARKER}
 
-
+# Program starts here
 if [ -z ${dod_url} ] || [ -z ${dodnum} ] || [ -z ${dodpath} ]; then
   echo '[-] Error: Missing required parameter(s).' >&2
   exit 1

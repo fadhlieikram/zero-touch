@@ -53,7 +53,8 @@ deploy_package() {
       echo "[-] Error: Nonbuild file(s) deployment failed." >&2
       return 1
   fi
-
+  
+  echo "[+] Deployment complete."
   return 0
 }
 
@@ -66,12 +67,12 @@ rollback_package() {
       return 1
   fi
 
-  echo "[+] Rollback package complete."
+  echo "[+] Rollback complete."
   return 0
 }
 
 
-# Start
+# Program starts here
 # Capture the script parameter
 job=$1
 package=$2

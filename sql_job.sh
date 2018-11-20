@@ -47,23 +47,23 @@ upzip_package() {
 
 deploy_package() {
 
-  ./deploy_build.sh ${package}
+  ./deploy_sql.sh ${package}
 
   if [ $? -ne 0 ]; then
-      echo "[-] Error: Build file(s) deployment failed." >&2
+      echo "[-] Error: Sql file(s) deployment failed." >&2
       return 1
   fi
-
+  
   echo "[+] Deployment complete."
   return 0
 }
 
 rollback_package() {
 
-  ./rollback_build.sh ${package}
+  ./rollback_sql.sh ${package}
 
   if [ $? -ne 0 ]; then
-      echo "[-] Error: Build file(s) rollback failed." >&2
+      echo "[-] Error: Sql file(s) rollback failed." >&2
       return 1
   fi
 

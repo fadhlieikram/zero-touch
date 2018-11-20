@@ -1,113 +1,46 @@
+#########################################################################
+###     This program sets db instance, finds and runs rollback        ###
+###     script from the dod package.                                  ###
+#########################################################################
 #!/bin/bash
 
 source props.properties
 
 # Initialize global variable
-declare -a PARAM_ARR
-ENTRY_FILE=
+declare -a param_arr
 dodnumber=
 
-set_build_var_array() {
-  # Get all variables with name starts with BUILD_PATH
-  local PARAMLIST=`echo ${!BUILD_PATH*}`
-  local SORTEDLIST=
+set_sql_var_array() {
+  # Get all variables with name starts with SQL_SCRIPT_
+  local paramlist=`echo ${!SQL_SCRIPT_*}`
+  local sortedlist=
   local tmpfile=lst2.tmp
 
-  for a in ${PARAMLIST}; do
+  # Place all variables in a temporary file to be sorted
+  for a in ${paramlist}; do
     echo "${a}" >> ${tmpfile}
   done
 
-  SORTEDLIST=$(sort -t_ -k3n ${tmpfile})
+  #Sort the variable at 'column' 3 based on '_' as delimeter
+  sortedlist=$(sort -t_ -k3n ${tmpfile})
   
+  # Remove temporary file
   if [ -f ${tmpfile} ]; then
     rm ${tmpfile}
   fi
   
-  # Iterate the list and get only variable ends with _SOURCE
-  index=0
-  for p in ${SORTEDLIST}; do
-    if [ ! -z "$p" ] && [[ "$p" = *_SOURCE ]]; then
-      PARAM_ARR[index]="$p"
+  # Iterate the list and get only variable ends with *_PATH
+  local index=0
+  for p in ${sortedlist}; do
+    if [ ! -z "$p" ] && [[ "$p" = *_PATH ]]; then
+      param_arr[index]="$p"
       index=$[index+1]
     fi
   done
 }
 
-restore_file() {
-  local filetorestore=$1
-  local dodnum=${dodnumber}
-  local backupfile=${filetorestore}_${dodnumber}
-  
-  if [ -z ${filetorestore} ] || [ -z ${backupfile} ]; then
-    echo '[-] Error: Required parameter(s) not set.' >&2
-    exit 1
-  fi
 
-  echo "[+] Restoring file (${backupfile}) to (${filetorestore})"
-
-  if [ ! -f "${backupfile}" ]; then
-    echo "[-] Warning: Backup file doesn't exist."
-    echo "[-] Warning: Deleting file:${filetorestore}"
-    
-    rm ${filetorestore}
-    
-    if [ $? -ne 0 ]; then
-      echo "[-] Error: Unable to delete file." >&2
-      return 1
-    fi 
-  
-  else
-    
-    cp -p ${backupfile} ${filetorestore}
-    
-    if [ $? -ne 0 ]; then
-      echo "[-] Error: Unable to restore file." >&2
-      return 1
-    fi
-    
-    if [ ! -f ${filetorestore} ]; then
-      echo "[-] Error: Attempt to restore file (${backupfile}) to (${filetorestore}) failed." >&2
-      return 1
-    fi
-  fi
-
-  return 0
-}
-
-delete_dir() {
-  local reventry=
-
-  if [ ! -f "${ENTRY_FILE}" ]; then
-    echo "[+] Directory creation entry file doesn't exist. No directory to be deleted."
-    return 0
-  fi
-  
-  # Reverse order of file content
-  reventry="${ENTRY_FILE}_rev"
-  tac ${ENTRY_FILE} > ${reventry}
-  
-  while read -r dir; do
-    echo "[+] Deleting directory:${dir}"
-
-    rmdir "${dir}"
-
-    if [ $? -ne 0 ]; then
-      echo "[-] Error: Unable to delete directory." >&2
-      return 1
-    fi
-
-  done < ${reventry}
-
-  echo "[+] Deleting entry file:${ENTRY_FILE}"
-
-  rm "${ENTRY_FILE}"
-  rm "${reventry}"
-
-  return 0
-}
-
-
-# Start
+# Program starts here
 # Check if parameter is passed
 if [ -z $1 ]; then
   echo "[-] Error: Please provide the dod number." >&2
@@ -115,8 +48,6 @@ if [ -z $1 ]; then
 fi
 
 dodnumber=$1
-ENTRY_FILE="${DIR_ENTRY_PATH}_${dodnumber}"
-export ENTRY_FILE
 
 # Check if dod path exist
 dodpath=${DOD_PATH}/${dodnumber}
@@ -128,15 +59,18 @@ fi
 
 echo "[+] Dod directory found:${dodpath}."
 
-set_build_var_array
+set_sql_var_array
 
-# Iterate every nonbuild source path
-for arr in "${PARAM_ARR[@]}"; do
+# Iterate every source path
+for arr in "${param_arr[@]}"; do
 
   var_source=${arr}
-  var_target=`echo ${arr} | sed s/SOURCE/TARGET/g`
+  var_instance=`echo ${arr} | sed s/PATH/INST/g`
+  dbinst=${!var_instance}
+  
+  echo "[+] Set db instance:${dbinst}"
 
-  # Find file in source path
+  # Find file(s) in source path
   dodsourcepath="${dodpath}${!var_source}"
   files=$(find "${dodsourcepath}" -type f -prune)
 
@@ -144,30 +78,37 @@ for arr in "${PARAM_ARR[@]}"; do
     echo "[-] Warning: Source path is empty. Path:${!var_source}"
     break
   fi
+  
+  # Remove file ends with _DEPLOY.sql
+  tmpfile=sql.tmp
+  for f in ${files}; do
+    if [[ "${f}" = *_ROLLBACK.sql ]]; then
+      echo "${f}" >> ${tmpfile}
+    fi
+  done
 
-  for file in ${files}; do
-    filename=$(basename "${file}")
-    targetfile="${!var_target}/${filename}"
+  # Sort the sequence at 'column' 2 and 3 based on '_' as delimeter.
+  # File with name *_(n)_DDL_DEPLOY.sql preceeds *_(n)_DML_DEPLOY.sql
+  # (n) is a non negative numerical value sorted ascending from 1 .. n
+  sortedlist=$(sort -t_ -k3,3 -k2n,2 ${tmpfile})
+  
+  rm ${tmpfile}
 
-    echo "[+] Deployed file found:${file}"
- 
-    restore_file ${targetfile}
+  # Iterate every found script and execute
+  for file in ${sortedlist}; do
+    filename=$(basename ${file})
+    echo "[+] Executing script:${filename}"
+    sourcefile="${file}"
+    
+    eval "${dbinst}"
+    eval "db2 -tvf ${file}"
     
     if [ $? -ne 0 ]; then
-       echo "[-] File rollback failed." >&2
+       echo "[-] Sql execution has failed." >&2
        exit 1
     fi
   done
 done
 
-#Delete any created directories
-echo "[+] Deleting created directory(s)."
-delete_dir
-
-if [ $? -ne 0 ]; then
-  echo "[-] Application file(s) rollback failed!" >&2
-  exit 1
-fi
-
-echo "[+] Application file(s) rollback complete."
+echo "[+] Sql deployment complete."
 exit 0

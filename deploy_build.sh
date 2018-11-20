@@ -1,63 +1,70 @@
+#########################################################################
+###   This program creates application directory if not exist,        ###
+###   backup and/or deploy,build application file(s)                  ###
+#########################################################################
 #!/bin/bash
 
 source props.properties
 
 # Initialize global variable
-declare -a PARAM_ARR
+declare -a param_arr
 dodnumber=
 
-create_app_dir(){
-  # Get all variables with name starts with APP_PATH*
-  local PARAMLIST=`echo ${!APP_PATH*}`
-  local SORTEDLIST=
+create_app_dir() {
+  # Get all variables with name starts with APP_PATH_*
+  local paramlist=`echo ${!APP_PATH_*}`
+  local sortedlist=
   local tmpfile=lst1.tmp
 
-  for a in ${PARAMLIST}; do
+  for a in ${paramlist}; do
     echo "${a}" >> ${tmpfile}
   done
 
-  SORTEDLIST=$(sort -t_ -k3n ${tmpfile})
+  sortedlist=$(sort -t_ -k3,3n ${tmpfile})
   
   if [ -f ${tmpfile} ]; then
     rm ${tmpfile}
   fi
   
   # Iterate the list and create dir if doesn't exist
-  for p in ${SORTEDLIST}; do
+  for p in ${sortedlist}; do
     if [[ "${p}" = *_TARGET ]] && [ ! -d "${!p}" ]; then
       
       echo "[+] Creating application directory:${!p}"
-        ./make_dir.sh "${!p}"
-        
-        if [ $? -ne 0 ]; then
-          echo "[-] Error: Unable to create dir." >&2
-          return 1
-        fi
+      ./make_dir.sh "${!p}"
+      
+      if [ $? -ne 0 ]; then
+        echo "[-] Error: Unable to create dir." >&2
+        return 1
+      fi
     fi
   done
 }
 
 set_build_var_array() {
-  # Get all variables with name starts with BUILD_PATH
-  local PARAMLIST=`echo ${!BUILD_PATH*}`
-  local SORTEDLIST=
+  # Get all variables with name starts with BUILD_PATH_*
+  local paramlist=`echo ${!BUILD_PATH_*}`
+  local sortedlist=
   local tmpfile=lst2.tmp
 
-  for a in ${PARAMLIST}; do
+  # Place all variables in a temporary file to be sorted
+  for a in ${paramlist}; do
     echo "${a}" >> ${tmpfile}
   done
 
-  SORTEDLIST=$(sort -t_ -k3n ${tmpfile})
+  #Sort the variable at 'column' 3 based on '_' as delimeter
+  sortedlist=$(sort -t_ -k3n ${tmpfile})
   
+  # Remove temporary file
   if [ -f ${tmpfile} ]; then
     rm ${tmpfile}
   fi
   
   # Iterate the list and get only variable ends with _SOURCE
-  index=0
-  for p in ${SORTEDLIST}; do
+  local index=0
+  for p in ${sortedlist}; do
     if [ ! -z "$p" ] && [[ "$p" = *_SOURCE ]]; then
-      PARAM_ARR[index]="$p"
+      param_arr[index]="$p"
       index=$[index+1]
     fi
   done
@@ -116,11 +123,12 @@ deploy_file() {
 
     chmod ${NONBUILD_CHMOD} "${target_dir}"
   fi
-  
+
+  echo "[+] Deploying file:${source}"
   cp -p ${source} ${target}
 
   if [ $? -ne 0 ]; then
-    echo "[-] Error: Unable to copy file:${source}" >&2
+    echo "[-] Error: Attempt to copy file (${source}) to (${target}) failed." >&2
     return 1
   fi
   
@@ -129,13 +137,13 @@ deploy_file() {
     return 1
   fi
 
-  chmod ${NONBUILD_CHMOD} ${target}
-  echo "[+] File deployed. File:${target}"
+  chmod ${BUILD_CHMOD} ${target}
+
   return 0
 }
 
 
-# Start
+# Program starts here
 # Check if parameter is passed
 if [ -z $1 ]; then
   echo "[-] Error: Please provide the dod number." >&2
@@ -143,8 +151,8 @@ if [ -z $1 ]; then
 fi
 
 dodnumber=$1
-ENTRY_FILE="${DIR_ENTRY_PATH}_${dodnumber}"
-export ENTRY_FILE
+entry_file="${DIR_ENTRY_PATH}_${dodnumber}"
+export entry_file
 
 # Check if dod path exist
 dodpath=${DOD_PATH}/${dodnumber}
@@ -166,8 +174,8 @@ fi
 
 set_build_var_array
 
-# Iterate every nonbuild source path
-for arr in "${PARAM_ARR[@]}"; do
+# Iterate every source path
+for arr in "${param_arr[@]}"; do
 
   var_source=${arr}
   var_target=`echo ${arr} | sed s/SOURCE/TARGET/g`
@@ -208,5 +216,5 @@ for arr in "${PARAM_ARR[@]}"; do
   done
 done
 
-echo "[+] Application file(s) deployment complete."
+echo "[+] Build file(s) deployment complete."
 exit 0
