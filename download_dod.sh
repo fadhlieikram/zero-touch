@@ -1,12 +1,16 @@
+#########################################################################
+###   This program download dod package, to a specified directory.    ###
+###                                                                   ###
+#########################################################################
 #!/bin/bash
-
-source setting.txt
+source /tmp/rundeck_tmp/enotice/sg/envar.sh
 
 dodnum=$1
 dodpath=$2
-marker=${dod_marker}
+dod_url=${DOD_URL}
+marker=${DOD_MARKER}
 
-
+# Program starts here
 if [ -z ${dod_url} ] || [ -z ${dodnum} ] || [ -z ${dodpath} ]; then
   echo '[-] Error: Missing required parameter(s).' >&2
   exit 1
@@ -21,23 +25,22 @@ if [ $? -ne 0 ]; then
 fi
 
 # Check if link can be reach
-echo "[+] wget --spider ${url}"
-wget --spider ${url}
+echo "[+] Checking url..."
+wget --spider --tries=1 ${url}
 
 return=$?
 if [ $return -ne 0 ]; then
-  echo "[-] Error: ${return}. Url ${url} cant be reached." >&2
+  echo "[-] Error: err ${return}. Url ${url} cant be reached." >&2
   exit 1
 fi
 
 # Perform download
-echo "[+] Downloading..."
-echo "[+] wget -v ${url} -O ${dodpath}/${dodnum}.html"
-wget -v ${url} -O ${dodpath}/${dodnum}.htm
+echo "[+] Downloading package..."
+wget -v --tries=1 ${url} -O ${dodpath}/${dodnum}.htm
 
 return=$?
 if [ $return -ne 0 ]; then
-  echo "[-] Error: ${return}. Failed to download from ${url}" >&2
+  echo "[-] Error: err ${return}. Failed to download from ${url}" >&2
   exit 1
 fi
 

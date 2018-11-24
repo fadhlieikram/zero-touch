@@ -1,6 +1,6 @@
 #########################################################################
 ###   This program creates application directory if not exist,        ###
-###   backup and/or deploy,build application file(s)                  ###
+###   backup and/or deploy,non build application file(s)              ###
 #########################################################################
 #!/bin/bash
 source /tmp/rundeck_tmp/enotice/sg/envar.sh
@@ -42,9 +42,9 @@ create_app_dir() {
   done
 }
 
-set_build_var_array() {
-  # Get all variables with name starts with BUILD_PATH_*
-  local paramlist=`echo ${!BUILD_PATH_*}`
+set_nonbuild_var_array() {
+  # Get all variables with name starts with NONBUILD_PATH_*
+  local paramlist=`echo ${!NONBUILD_PATH_*}`
   local sortedlist=
   local tmpfile=lst2.tmp
 
@@ -165,13 +165,14 @@ deploy_file() {
     return 1
   fi
 
-  chmod ${BUILD_CHMOD} ${target}
+  chmod ${NONBUILD_CHMOD} ${target}
+  dos2unix -q "${target}"
 
   return 0
 }
 
 
-# Program starts here
+# Start
 # Check if parameter is passed
 if [ -z $1 ]; then
   echo "[-] Error: Please provide the dod number." >&2
@@ -179,6 +180,8 @@ if [ -z $1 ]; then
 fi
 
 dodnumber=$1
+entry_file="${DIR_ENTRY_PATH}_${dodnumber}"
+export entry_file
 
 # Check if dod path exist
 dodpath=${DOD_PATH}/${dodnumber}
@@ -189,7 +192,6 @@ if [ ! -d ${dodpath} ]; then
 fi
 
 echo "[+] Dod directory found:${dodpath}."
-
 
 backupdir=${BACKUP_PATH}/${dodnumber}_bak
 
@@ -215,8 +217,7 @@ if [ $? -ne 0 ]; then
   exit 1
 fi
 
-
-set_build_var_array
+set_nonbuild_var_array
 
 # Iterate every source path
 for arr in "${param_arr[@]}"; do
@@ -264,5 +265,5 @@ for arr in "${param_arr[@]}"; do
   done
 done
 
-echo "[+] Build file(s) deployment complete."
+echo "[+] Non-build file(s) deployment complete."
 exit 0
